@@ -1,0 +1,58 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argo.octopus.com/project: "multi-source-test"
+    argo.octopus.com/environment: "development"
+    argo.octopus.com/image-replacement-paths: '{"shared-values": ["nginx:{{ .Values.image.tag }}"], "backend-values": ["{{ .Values.image.name }}:{{ .Values.image.tag }}"], "frontend-values": ["{{ .Values.redis.image }}"]}'
+  name: multi-service-app
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  
+  sources:
+    # Shared values repository
+    - repoURL: https://github.com/Jtango18/jt-argo-helm-values
+      targetRevision: main
+      ref: shared-values
+    
+    # Frontend-specific values repository  
+    - repoURL: https://github.com/Jtango18/jt-argo-helm-values-fe
+      targetRevision: main
+      ref: frontend-values
+      
+    # Backend-specific values repository
+    - repoURL: https://github.com/Jtango18/jt-argo-helm-values-be
+      targetRevision: main
+      ref: backend-values
+    
+    # Frontend Helm chart
+    - repoURL: https://github.com/Jtango18/jt-argo-helm
+      path: "frontend"
+      targetRevision: multi-chart-fe
+      helm:
+        valueFiles:
+          - $shared-values/jt-argo-helm/values.yaml
+          - $frontend-values/fe-values/values-for-frontend.yaml
+    
+    # Backend Helm chart
+    - repoURL: https://github.com/Jtango18/jt-argo-helm
+      path: "backend"
+      targetRevision: multi-chart-be
+      helm:
+        valueFiles:
+          - $shared-values/jt-argo-helmv2/values.yaml
+          - $backend-values/backend-values.yaml
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: multi-service-app
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
