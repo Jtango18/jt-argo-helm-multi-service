@@ -4,7 +4,9 @@ metadata:
   annotations:
     argo.octopus.com/project: "multi-source-test"
     argo.octopus.com/environment: "development"
-    argo.octopus.com/image-replacement-paths: '{"shared-values": ["nginx:{{ .Values.image.tag }}"], "backend-values": ["{{ .Values.image.name }}:{{ .Values.image.tag }}"], "frontend-values": ["{{ .Values.redis.image }}"]}'
+    argo.octopus.com/image-replace-paths.shared-values: "nginx:{{ .Values.image.tag }}"
+    argo.octopus.com/image-replace-paths.backend-values: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+    argo.octopus.com/image-replace-paths.frontend-values: "{{ .Values.redis.image }}"
   name: multi-service-app
   namespace: argocd
   finalizers:
